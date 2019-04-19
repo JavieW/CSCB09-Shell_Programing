@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# check wheter the input is an valid directory
+if ! [ -d $1 ]
+then
+    echo "error: "$1": is not a valid directory" 1>&2
+    exit 1
+fi
+
+# go through each file in that directory
+for fname in "$1"/*
+do
+
+    type=`file -b  "$fname" | cut -c 1-4`
+
+    # if the file is JPEG type
+    if [ "$type" = "JPEG" ]
+    then
+        date=`exiftime -tg "$fname" | cut -f 3 -d " "`
+	# check wheter we can find Exif data by checking whether $date is empty
+        # if we can find Exif data 
+	if [ "$date" != "" ]
+        then
+	    year=`echo $date | cut -f 1 -d ":"`
+	    month=`echo $date | cut -f 2 -d ":"`
+	    mkdir -p $year/$month
+	    mv "$fname" $year/$month
+	 fi
+    # if the file is another type or not exist
+    else
+         echo "error: "$fname": is not a valid JPEG file" 1>&2
+    fi
+done

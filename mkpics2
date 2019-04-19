@@ -1,0 +1,112 @@
+#!/bin/sh
+
+# check whter the first input is a positive integer
+if [ $1 -gt 0 ]
+then
+    # if is, record and pop it
+    num_cols=$1
+    shift
+else
+    # if not, give an error message and exit in an proper situation
+    echo "error: $1: is not a positive int" 1>&2
+    exit 1
+fi
+
+# check wheter missing a argument
+if [ "$1" = "" ]
+then
+    echo "error: you should give a directory as a argument"
+    exit 1
+fi
+
+# check wheter the input is an valid directory
+if ! [ -d $1 ]
+then
+    echo "error: "$1": is not a valid directory" 1>&2
+    exit 1
+fi
+
+# print out the beginning several lines
+echo "<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">"
+echo "<html>"
+echo "  <head>"
+echo "    <title>Pictures</title>"
+echo "  </head>"
+echo
+echo "  <body>"
+echo "    <h1>Pictures</h1>"
+
+# find all year directory in the given directory
+for year in "$1"/[0-9][0-9][0-9][0-9]
+do
+    
+    # check year is a dir
+    if [ -d $year ]
+    then
+	echo
+	echo "<h2>`echo "$year" | rev | cut -d "/" -f 1 | rev`</h2>"
+	echo "<table>"
+	
+	# create a counter
+	i=0
+	
+# find all month directory in year
+	for month in "$year"/[0-9][0-9]
+	do
+	    
+	    # check month is a dir and month is less than 13
+	    if ([ -d "$month" ] && [ `echo $month | rev | cut -d "/" -f 1 | rev` -le 12 ])
+	    then
+		
+# find all file in month
+		for fname in "$month"/*
+		do
+		    
+		    if [ $i -eq 0 ]
+		    then
+			echo "  <tr>"
+		    fi
+
+		    # check whether the file is a JPEG file
+		    type=`file -b "$fname" | cut -c 1-4`
+		    if [ $type = "JPEG" ]
+		    then
+		        # a way to print out a string with '"'s inside
+			echo "       <td><img src=\"$fname\" height=100></td>"  
+			# increment counter
+			i=`expr $i + 1`
+		    # if the file is another type or not exist
+		    else
+			echo "error: "$1": is not a valid JPEG file" 1>&2
+		    fi
+
+		    if [ $i -eq $num_cols ]
+		    then
+			echo "  </tr>"
+			i=0
+		    fi
+
+		done
+
+	    else
+		echo "error: $month: is not a directory and/or cannot greater than 12"
+	    fi
+
+	done
+	
+	if [ $i -ne $num_cols ]
+	then
+	    echo "  </tr>"
+	fi
+	
+	echo "<table>"
+	
+    else
+	echo "error: $year: is not a directory" 1>&2
+    fi
+    
+done
+
+# print out the last several lines
+echo "</body>"
+echo "</html>"
